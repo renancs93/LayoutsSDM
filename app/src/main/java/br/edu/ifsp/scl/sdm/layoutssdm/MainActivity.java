@@ -7,6 +7,7 @@ import android.os.PersistableBundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -14,10 +15,11 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RadioGroup;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 
-public class MainActivity extends AppCompatActivity{
+public class MainActivity extends AppCompatActivity implements Serializable{
 
     private CheckBox notificacoesCheckBox;
     private RadioGroup notificacoesRadioGroup;
@@ -90,8 +92,8 @@ public class MainActivity extends AppCompatActivity{
             View novoTelefoneLayout = layoutInflater.inflate(R.layout.novo_telefone_layout, null);
             telefoneArrayList.add(novoTelefoneLayout);
             telefoneLinearLayout.addView(novoTelefoneLayout);
-
         }
+
     }
 
     public void adicionarEmail(View view){
@@ -103,7 +105,25 @@ public class MainActivity extends AppCompatActivity{
             View novoEmailLayout = layoutInflater.inflate(R.layout.novo_email_layout, null);
             emailArrayList.add(novoEmailLayout);
             emailLinearLayout.addView(novoEmailLayout);
+        }
+    }
 
+    public void restaurarViews(LinearLayout layout, ArrayList<View> arrayList){
+
+        try {
+
+            for (int i=0; i<arrayList.size() ; i++){
+
+                View holderLayout = arrayList.get(i);
+                if(holderLayout.getParent()!=null)
+                    ((LinearLayout)holderLayout.getParent()).removeView(holderLayout); // <- fix
+
+                layout.addView(arrayList.get(i));
+
+            }
+        }
+        catch (Exception e){
+            e.printStackTrace();
         }
     }
 
@@ -116,6 +136,8 @@ public class MainActivity extends AppCompatActivity{
         outState.putInt(ESTADO_NOTIFICACAO_RADIOBUTTON_SELECIONADO, notificacoesRadioGroup.getCheckedRadioButtonId());
 
         //salvar os Arrays com as Views
+        outState.putSerializable(ESTADO_TELEFONES_TAG, telefoneArrayList);
+        outState.putSerializable(ESTADO_EMAILS_TAG, emailArrayList);
 
     }
 
@@ -141,10 +163,27 @@ public class MainActivity extends AppCompatActivity{
             }
 
             //Recuperar os Arrays com as Views
-            emailArrayList = (ArrayList<View>) savedInstanceState.get(ESTADO_EMAILS_TAG);
+            telefoneArrayList = (ArrayList<View>) savedInstanceState.getSerializable(ESTADO_TELEFONES_TAG);
+            emailArrayList = (ArrayList<View>) savedInstanceState.getSerializable(ESTADO_EMAILS_TAG);
+
+            restaurarViews(emailLinearLayout, emailArrayList);
+            restaurarViews(telefoneLinearLayout, telefoneArrayList);
 
         }
 
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        emailLinearLayout.removeAllViews();
+        telefoneLinearLayout.removeAllViews();
     }
 
     public void limparFormulario(){
