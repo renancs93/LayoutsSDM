@@ -8,16 +8,17 @@
         android:id="@+id/emailTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="E-mail"
+        android:text="E-mail: "
         android:textSize="18sp"
+        android:layout_weight="0"
         />
 
     <EditText
         android:id="@+id/emailEditText"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:inputType="textEmailAddress"
-        android:layout_gravity=""
+        android:layout_weight="1"
         />
 
 </LinearLayout>

@@ -14,6 +14,7 @@ import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RadioGroup;
+import android.widget.Spinner;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -29,12 +30,17 @@ public class MainActivity extends AppCompatActivity implements Serializable{
     private final String ESTADO_NOME_TAG = "ESTADO_NOME_TAG";
     private final String ESTADO_EMAILS_TAG = "ESTADO_EMAILS_TAG";
     private final String ESTADO_TELEFONES_TAG = "ESTADO_TELEFONES_TAG";
+    private final String ESTADO_TELEFONES_TIPO_TAG = "ESTADO_TELEFONES_TIPO_TAG";
 
     private EditText txtNome, txtEmail, txtTelefone;
     private Button btnLimpar, btnSalvar;
 
     private LinearLayout telefoneLinearLayout, emailLinearLayout;
     private ArrayList<View> telefoneArrayList, emailArrayList;
+
+    private ArrayList<String> emailsSalvos = new ArrayList<>();
+    private ArrayList<String> telefonesSalvos = new ArrayList<>();
+    private ArrayList<Integer> tiposTelefonesSalvos = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,24 +114,61 @@ public class MainActivity extends AppCompatActivity implements Serializable{
         }
     }
 
-    public void restaurarViews(LinearLayout layout, ArrayList<View> arrayList){
+    public void restaurarViews(int resourceView, ArrayList<String> arrayListString, ArrayList<Integer> arrayListInteger){
 
-        try {
+        if (resourceView == R.layout.novo_email_layout){
 
-            for (int i=0; i<arrayList.size() ; i++){
+            for (String email : arrayListString){
 
-                View holderLayout = arrayList.get(i);
-                if(holderLayout.getParent()!=null)
-                    ((LinearLayout)holderLayout.getParent()).removeView(holderLayout); // <- fix
+                LayoutInflater layoutInflater = getLayoutInflater();
+                //adiciona o Layout de Email
+                View viewEmail = layoutInflater.inflate(resourceView, null);
 
-                layout.addView(arrayList.get(i));
+                EditText editTextEmail = viewEmail.findViewById(R.id.emailEditText);
+                editTextEmail.setText(email);
 
+                emailLinearLayout.addView(viewEmail);
             }
         }
-        catch (Exception e){
-            e.printStackTrace();
+        if(resourceView == R.layout.novo_telefone_layout){
+
+            for(int i=0 ; i<arrayListString.size() ; i++){
+
+                LayoutInflater layoutInflater = getLayoutInflater();
+
+                //adiciona o Layout de Email
+                View viewTelefone = layoutInflater.inflate(resourceView, null);
+
+                EditText editTextTelefone =  viewTelefone.findViewById(R.id.telefoneEditText);
+                Spinner spinnerTelefone = viewTelefone.findViewById(R.id.tipoTelefoneSpinner);
+
+                editTextTelefone.setText(arrayListString.get(i).toString());
+                spinnerTelefone.setSelection(arrayListInteger.get(i));
+
+                telefoneLinearLayout.addView(viewTelefone);
+            }
         }
+
     }
+
+//    public void restaurarViews(LinearLayout layout, ArrayList<View> arrayList){
+//
+//        try {
+//
+//            for (int i=0; i<arrayList.size() ; i++){
+//
+//                View holderLayout = arrayList.get(i);
+//                if(holderLayout.getParent()!=null)
+//                    ((LinearLayout)holderLayout.getParent()).removeView(holderLayout); // <- fix
+//
+//                layout.addView(arrayList.get(i));
+//
+//            }
+//        }
+//        catch (Exception e){
+//            e.printStackTrace();
+//        }
+//    }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
@@ -136,8 +179,37 @@ public class MainActivity extends AppCompatActivity implements Serializable{
         outState.putInt(ESTADO_NOTIFICACAO_RADIOBUTTON_SELECIONADO, notificacoesRadioGroup.getCheckedRadioButtonId());
 
         //salvar os Arrays com as Views
-        outState.putSerializable(ESTADO_TELEFONES_TAG, telefoneArrayList);
-        outState.putSerializable(ESTADO_EMAILS_TAG, emailArrayList);
+        if(emailArrayList.size() > 0){
+
+            for(View view : emailArrayList){
+
+                EditText editTextEmail = view.findViewById(R.id.emailEditText);
+                emailsSalvos.add(editTextEmail.getText().toString());
+            }
+        }
+        if(telefoneArrayList.size() > 0){
+
+            for(View view : telefoneArrayList){
+
+                EditText editTextTelefone = view.findViewById(R.id.telefoneEditText);
+                Spinner spinnerTelefoneTipo = view.findViewById(R.id.tipoTelefoneSpinner);
+
+                telefonesSalvos.add(editTextTelefone.getText().toString());
+
+                if (spinnerTelefoneTipo.getSelectedItem().equals("Fixo")){
+                    tiposTelefonesSalvos.add(0);
+                }
+                else {
+                    tiposTelefonesSalvos.add(1);
+                }
+            }
+
+        }
+
+
+        outState.putStringArrayList(ESTADO_EMAILS_TAG, emailsSalvos);
+        outState.putStringArrayList(ESTADO_TELEFONES_TAG, telefonesSalvos);
+        outState.putIntegerArrayList(ESTADO_TELEFONES_TIPO_TAG, tiposTelefonesSalvos);
 
     }
 
@@ -162,28 +234,25 @@ public class MainActivity extends AppCompatActivity implements Serializable{
                 notificacoesRadioGroup.check(savedInstanceState.getInt(ESTADO_NOTIFICACAO_RADIOBUTTON_SELECIONADO));
             }
 
-            //Recuperar os Arrays com as Views
-            telefoneArrayList = (ArrayList<View>) savedInstanceState.getSerializable(ESTADO_TELEFONES_TAG);
-            emailArrayList = (ArrayList<View>) savedInstanceState.getSerializable(ESTADO_EMAILS_TAG);
+            //Recuperar os Arrays com informações das Views Dinâmicas
+            if (emailsSalvos.size() > 0){
 
-            restaurarViews(emailLinearLayout, emailArrayList);
-            restaurarViews(telefoneLinearLayout, telefoneArrayList);
+            }
+            if(telefonesSalvos.size() > 0){
+
+            }
+
+            //recupera os arrays dos dados dinâmicos
+            emailsSalvos = savedInstanceState.getStringArrayList(ESTADO_EMAILS_TAG);
+            telefonesSalvos = savedInstanceState.getStringArrayList(ESTADO_TELEFONES_TAG);
+            tiposTelefonesSalvos = savedInstanceState.getIntegerArrayList(ESTADO_TELEFONES_TIPO_TAG);
+
+            //chama devidos métodos para o preenchimento das views dinâmicas
+            restaurarViews(R.layout.novo_email_layout, emailsSalvos, null);
+            restaurarViews(R.layout.novo_telefone_layout, telefonesSalvos, tiposTelefonesSalvos);
 
         }
 
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-
-        emailLinearLayout.removeAllViews();
-        telefoneLinearLayout.removeAllViews();
     }
 
     public void limparFormulario(){
